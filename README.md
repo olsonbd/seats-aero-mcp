@@ -79,3 +79,12 @@ publish. After the package exists, configure its npm trusted publisher with
 GitHub owner `kwonye`, repository `seats-aero-mcp`, and workflow filename
 `release.yml`; then remove any temporary npm token and use Trusted Publishing
 for subsequent releases.
+
+With npm CLI 11.15 or newer, the trusted publisher can be configured with:
+
+```sh
+npm trust github @kwonye/seats-aero-mcp \
+  --repo kwonye/seats-aero-mcp \
+  --file release.yml \
+  --allow-publish
+```
