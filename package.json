@@ -39,7 +39,7 @@
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
     "start:http": "node dist/index.js --http",
-    "test": "tsx --test \"test/**/*.test.ts\""
+    "test": "tsx --test test/seats-aero.test.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/node": "^2.0.0",
