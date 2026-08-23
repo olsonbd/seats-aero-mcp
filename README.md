@@ -66,3 +66,16 @@ Refresh calls return the upstream asynchronous status. Repeat the same availabil
 ```sh
 npm test
 ```
+
+## Publishing
+
+Releases are published by GitHub Actions using npm Trusted Publishing (GitHub
+OIDC), matching the `kwonye/yahoo-fantasy-mcp` setup. The workflow requires no
+long-lived npm token and publishes the version represented by the GitHub
+release tag.
+
+Bootstrap the initial package publication once with an npm-authenticated
+publish. After the package exists, configure its npm trusted publisher with
+GitHub owner `kwonye`, repository `seats-aero-mcp`, and workflow filename
+`release.yml`; then remove any temporary npm token and use Trusted Publishing
+for subsequent releases.
