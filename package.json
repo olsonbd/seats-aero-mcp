@@ -1,5 +1,5 @@
 {
-  "name": "seats-aero-mcp",
+  "name": "@kwonye/seats-aero-mcp",
   "version": "0.1.0",
   "description": "MCP v2 server for the Seats.aero partner API",
   "keywords": [
