@@ -96,6 +96,7 @@ test("serializes GET requests and sends the raw Partner-Authorization key", asyn
   assert.equal(mocked.calls[0]?.init?.headers
     ? new Headers(mocked.calls[0].init.headers).get("Partner-Authorization")
     : null, "raw-key");
+  assert.equal(new Headers(mocked.calls[0]?.init?.headers).get("User-Agent"), "seats-aero-mcp");
   assert.equal(new Headers(mocked.calls[0]?.init?.headers).get("Authorization"), null);
 });
 
@@ -130,6 +131,7 @@ test("refresh cached data is Pro-only and posts availability_ids", async () => {
   assert.equal(first.isError, undefined);
   assert.deepEqual(JSON.parse(String(mocked.calls[0]?.init?.body)), { availability_ids: ["a", "b"] });
   assert.equal(new Headers(mocked.calls[0]?.init?.headers).get("content-type"), "application/json");
+  assert.equal(new Headers(mocked.calls[0]?.init?.headers).get("User-Agent"), "seats-aero-mcp");
 
   const commercialMock = mockFetch({ body: { shouldNot: "be called" } });
   const commercial = await callTool(config("commercial"), commercialMock.fetchImplementation, "seats_aero_refresh_cached_data", {

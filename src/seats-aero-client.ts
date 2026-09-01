@@ -4,6 +4,8 @@ export type FetchImplementation = (
   init?: RequestInit
 ) => Promise<Response>;
 
+const USER_AGENT = "seats-aero-mcp";
+
 export class SeatsAeroApiError extends Error {
   readonly status: number;
   readonly responseBody: unknown;
@@ -65,7 +67,8 @@ export class SeatsAeroClient {
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
     const headers: Record<string, string> = {
       Accept: "application/json",
-      "Partner-Authorization": this.apiKey
+      "Partner-Authorization": this.apiKey,
+      "User-Agent": USER_AGENT
     };
     if (method === "POST") {
       headers["Content-Type"] = "application/json";
