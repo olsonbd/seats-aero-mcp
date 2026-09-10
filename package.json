@@ -1,6 +1,6 @@
 {
-  "name": "@kwonye/seats-aero-mcp",
-  "version": "0.1.0",
+  "name": "@olsonbd/seats-aero-mcp",
+  "version": "0.2.0",
   "description": "MCP v2 server for the Seats.aero partner API",
   "keywords": [
     "mcp",
@@ -12,12 +12,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kwonye/seats-aero-mcp.git"
+    "url": "git+https://github.com/olsonbd/seats-aero-mcp.git"
   },
   "bugs": {
-    "url": "https://github.com/kwonye/seats-aero-mcp/issues"
+    "url": "https://github.com/olsonbd/seats-aero-mcp/issues"
   },
-  "homepage": "https://github.com/kwonye/seats-aero-mcp#readme",
+  "homepage": "https://github.com/olsonbd/seats-aero-mcp#readme",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -28,9 +28,6 @@
     "README.md",
     "LICENSE"
   ],
-  "publishConfig": {
-    "access": "public"
-  },
   "engines": {
     "node": ">=20"
   },
@@ -39,7 +36,7 @@
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
     "start:http": "node dist/index.js --http",
-    "test": "tsx --test test/seats-aero.test.ts"
+    "test": "tsx --test test/*.test.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/node": "^2.0.0",
@@ -51,5 +48,6 @@
     "@types/node": "^24.0.0",
     "tsx": "^4.23.12",
     "typescript": "^7.0.2"
-  }
+  },
+  "private": true
 }

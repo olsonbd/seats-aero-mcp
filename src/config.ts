@@ -8,6 +8,7 @@ export interface AppConfig {
   httpHost: string;
   httpPort: number;
   httpBearerToken?: string;
+  allowedOrigins?: string[];
 }
 
 const DEFAULT_BASE_URL = "https://seats.aero/partnerapi";
@@ -39,7 +40,7 @@ function isLoopbackHost(host: string): boolean {
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
-  const plan = required(env.SEATS_AERO_PLAN, "SEATS_AERO_PLAN");
+  const plan = env.SEATS_AERO_PLAN?.trim() || "pro";
   if (plan !== "commercial" && plan !== "pro") {
     throw new Error("SEATS_AERO_PLAN must be either commercial or pro");
   }
@@ -61,7 +62,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     ),
     httpHost,
     httpPort: positiveInteger(env.MCP_HTTP_PORT, "MCP_HTTP_PORT", DEFAULT_HTTP_PORT),
-    httpBearerToken
+    httpBearerToken,
+    allowedOrigins: (env.MCP_ALLOWED_ORIGINS || "").split(",").map(value => value.trim()).filter(Boolean)
   };
 }
 

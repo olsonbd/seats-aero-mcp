@@ -107,7 +107,7 @@ test("get destinations requires exactly one direction and serializes it", async 
   });
 
   assert.equal(result.isError, undefined);
-  assert.deepEqual(JSON.parse(textResult(result)), [{ airport: "JFK" }]);
+  assert.deepEqual(JSON.parse(textResult(result)).data.data, [{ airport: "JFK" }]);
   assert.match(mocked.calls[0]?.url ?? "", /origin_airport=SFO/);
   assert.doesNotMatch(mocked.calls[0]?.url ?? "", /destination_airport/);
 
@@ -155,8 +155,8 @@ test("refresh status can be polled by repeating the same call without internal r
     availabilityIds: ["a"]
   });
 
-  assert.equal(JSON.parse(textResult(first)).complete, false);
-  assert.equal(JSON.parse(textResult(second)).complete, true);
+  assert.equal(JSON.parse(textResult(first)).data.complete, false);
+  assert.equal(JSON.parse(textResult(second)).data.complete, true);
   assert.equal(mocked.calls.length, 2);
 });
 
@@ -170,18 +170,16 @@ test("Live Search is commercial-only", async () => {
     seatCount: 2
   });
   assert.equal(commercial.isError, undefined);
-  assert.deepEqual(JSON.parse(textResult(commercial)), [{ id: "live-trip" }]);
+  assert.deepEqual(JSON.parse(textResult(commercial)).data, [{ id: "live-trip" }]);
   assert.equal(JSON.parse(String(commercialMock.calls[0]?.init?.body)).origin_airport, "SFO");
 
   const proMock = mockFetch({ body: { shouldNot: "be called" } });
-  const pro = await callTool(config("pro"), proMock.fetchImplementation, "seats_aero_live_search", {
+  await assert.rejects(() => callTool(config("pro"), proMock.fetchImplementation, "seats_aero_live_search", {
     originAirport: "SFO",
     destinationAirport: "LHR",
     departureDate: "2026-09-01",
     source: "united"
-  });
-  assert.equal(pro.isError, true);
-  assert.match(textResult(pro), /commercial/i);
+  }), /not found|unknown tool/i);
   assert.equal(proMock.calls.length, 0);
 });
 
@@ -275,6 +273,8 @@ test("stdio transport initializes and lists the Seats.aero tools", async () => {
   child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/list", params: {} })}\n`);
   await waitFor(() => messages.some((message) => message.id === 2));
   const tools = ((messages.find((message) => message.id === 2)?.result as Record<string, unknown>)?.tools ?? []) as Array<{ name: string }>;
+  assert.equal(tools.length, 6);
+  assert.ok(!tools.some((tool) => tool.name === "seats_aero_live_search"));
   assert.ok(tools.some((tool) => tool.name === "seats_aero_get_destinations"));
   assert.ok(tools.some((tool) => tool.name === "seats_aero_refresh_cached_data"));
 

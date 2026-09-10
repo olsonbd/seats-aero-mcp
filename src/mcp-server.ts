@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/server";
 import * as z from "zod/v4";
 
 import type { AppConfig } from "./config.js";
+import { summarizeAvailability, pageResult } from "./results.js";
 import { SeatsAeroClient } from "./seats-aero-client.js";
 
 const cabins = ["economy", "premium", "business", "first"] as const;
@@ -11,27 +12,28 @@ const iataCode = z
   .string()
   .regex(/^[A-Za-z]{3}$/, "must be a three-letter IATA airport code")
   .transform((value) => value.toUpperCase());
-const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "must use YYYY-MM-DD format");
+const date = z.iso.date();
 const nonNegativeInteger = z.number().int().min(0);
 const positiveInteger = z.number().int().positive();
 
+const dateRange = (input: { startDate?: string; endDate?: string }) => !input.startDate || !input.endDate || input.startDate <= input.endDate;
 const cachedSearchSchema = z.object({
-  originAirports: z.array(iataCode).min(1),
-  destinationAirports: z.array(iataCode).min(1),
+  originAirports: z.array(iataCode).min(1).max(10),
+  destinationAirports: z.array(iataCode).min(1).max(10),
   startDate: date.optional(),
   endDate: date.optional(),
   cursor: nonNegativeInteger.optional(),
-  take: z.number().int().min(10).max(1000).optional(),
+  take: z.number().int().min(10).max(100).default(25),
   orderBy: z.enum(["lowest_mileage"]).optional(),
   skip: nonNegativeInteger.optional(),
-  includeTrips: z.boolean().optional(),
   onlyDirectFlights: z.boolean().optional(),
   carriers: z.array(z.string().regex(/^[A-Za-z0-9]{2,3}$/)).min(1).optional(),
   includeFiltered: z.boolean().optional(),
   sources: z.array(z.string().min(1)).min(1).optional(),
-  minifyTrips: z.boolean().optional(),
-  cabins: z.array(z.enum(cabins)).min(1).optional()
-});
+  cabins: z.array(z.enum(cabins)).min(1).optional(),
+  minCabinPct: z.number().int().min(0).max(100).default(100),
+  format: z.enum(["summary", "full"]).default("summary")
+}).refine(dateRange, "startDate must not follow endDate");
 
 const bulkAvailabilitySchema = z.object({
   source: z.string().min(1),
@@ -40,23 +42,27 @@ const bulkAvailabilitySchema = z.object({
   endDate: date.optional(),
   originRegion: z.enum(regions).optional(),
   destinationRegion: z.enum(regions).optional(),
-  take: z.number().int().min(10).max(1000).optional(),
+  take: z.number().int().min(10).max(100).default(25),
   cursor: nonNegativeInteger.optional(),
   skip: nonNegativeInteger.optional(),
   includeFiltered: z.boolean().optional()
-});
+}).refine(dateRange, "startDate must not follow endDate");
 
+const localPage = { offset: nonNegativeInteger.default(0), limit: z.number().int().min(1).max(50).default(25) };
 const getTripsSchema = z.object({
-  id: z.string().min(1),
-  includeFiltered: z.boolean().optional()
+  id: z.string().min(1).max(200),
+  includeFiltered: z.boolean().optional(),
+  minCabinPct: z.number().int().min(0).max(100).default(100),
+  ...localPage
 });
 
-const sourceSchema = z.object({ source: z.string().min(1) });
+const sourceSchema = z.object({ source: z.string().min(1), ...localPage });
 
 const destinationsSchema = z
   .object({
     originAirport: iataCode.optional(),
-    destinationAirport: iataCode.optional()
+    destinationAirport: iataCode.optional(),
+    ...localPage
   })
   .refine(
     ({ originAirport, destinationAirport }) => Boolean(originAirport) !== Boolean(destinationAirport),
@@ -64,7 +70,7 @@ const destinationsSchema = z
   );
 
 const refreshCachedDataSchema = z.object({
-  availabilityIds: z.array(z.string().min(1)).min(1).max(250)
+  availabilityIds: z.array(z.string().min(1).max(200)).min(1).max(10)
 });
 
 const liveSearchSchema = z.object({
@@ -78,14 +84,14 @@ const liveSearchSchema = z.object({
 });
 
 export function createSeatsAeroMcpServer(config: AppConfig, client: SeatsAeroClient): McpServer {
-  const server = new McpServer({ name: "seats-aero", version: "0.1.0" });
+  const server = new McpServer({ name: "seats-aero", version: "0.2.0" });
 
   server.registerTool(
     "seats_aero_cached_search",
     {
       title: "Cached Search",
       description:
-        "Search cached award availability between one or more origin and destination airports. Results are summary availability objects; use seats_aero_get_trips for flight-level details.",
+        "Search cached award availability between one or more origin and destination airports. Cached data is not guaranteed bookable. Defaults to 25 summaries; preserve cursor/hasMore to request the next page explicitly. Missing seat counts are unknown. Use seats_aero_get_trips for itinerary details and taxes. format=full retains upstream fields.",
       inputSchema: cachedSearchSchema,
       annotations: { readOnlyHint: true, idempotentHint: true }
     },
@@ -100,14 +106,14 @@ export function createSeatsAeroMcpServer(config: AppConfig, client: SeatsAeroCli
           take: input.take,
           order_by: input.orderBy,
           skip: input.skip,
-          include_trips: input.includeTrips,
+          include_trips: false,
           only_direct_flights: input.onlyDirectFlights,
           carriers: input.carriers?.join(","),
           include_filtered: input.includeFiltered,
           sources: input.sources?.join(","),
-          minify_trips: input.minifyTrips,
-          cabins: input.cabins?.join(",")
-        })
+          cabins: input.cabins?.join(","),
+          min_cabin_pct: input.minCabinPct
+        }).then(result => input.format === "summary" ? summarizeAvailability(result) : result)
       )
   );
 
@@ -133,7 +139,7 @@ export function createSeatsAeroMcpServer(config: AppConfig, client: SeatsAeroCli
           cursor: input.cursor,
           skip: input.skip,
           include_filtered: input.includeFiltered
-        })
+        }).then(summarizeAvailability)
       )
   );
 
@@ -141,15 +147,16 @@ export function createSeatsAeroMcpServer(config: AppConfig, client: SeatsAeroCli
     "seats_aero_get_trips",
     {
       title: "Get Trips",
-      description: "Retrieve flight-level trips for a cached availability object ID.",
+      description: "Retrieve flight-level trips for a cached availability ID. Times are local airport times; taxes retain upstream units/currency. Defaults to 25 itineraries; use page.nextOffset for another page (costs a new API call).",
       inputSchema: getTripsSchema,
       annotations: { readOnlyHint: true, idempotentHint: true }
     },
     async (input) =>
       callTool(() =>
         client.get(`/trips/${encodeURIComponent(input.id)}`, {
-          include_filtered: input.includeFiltered
-        })
+          include_filtered: input.includeFiltered,
+          min_cabin_pct: input.minCabinPct
+        }).then(result => pageResult(result, input.offset, input.limit))
       )
   );
 
@@ -157,11 +164,11 @@ export function createSeatsAeroMcpServer(config: AppConfig, client: SeatsAeroCli
     "seats_aero_get_routes",
     {
       title: "Get Routes",
-      description: "List cached routes for a mileage program.",
+      description: "List cached routes for a mileage program. Use page.nextOffset to retrieve additional routes; each page costs an API call.",
       inputSchema: sourceSchema,
       annotations: { readOnlyHint: true, idempotentHint: true }
     },
-    async (input) => callTool(() => client.get("/routes", { source: input.source }))
+    async (input) => callTool(() => client.get("/routes", { source: input.source }).then(result => pageResult(result, input.offset, input.limit)))
   );
 
   server.registerTool(
@@ -169,7 +176,7 @@ export function createSeatsAeroMcpServer(config: AppConfig, client: SeatsAeroCli
     {
       title: "Get Destinations",
       description:
-        "Return airports reachable from, or airports that can reach, one airport, with the cheapest raw nonstop mileage price per cabin. Provide exactly one airport direction.",
+        "Return airports reachable from, or airports that can reach, one airport, with the cheapest raw nonstop mileage price per cabin. Provide exactly one airport direction. Use page.nextOffset for additional results; each page costs an API call.",
       inputSchema: destinationsSchema,
       annotations: { readOnlyHint: true, idempotentHint: true }
     },
@@ -178,7 +185,7 @@ export function createSeatsAeroMcpServer(config: AppConfig, client: SeatsAeroCli
         client.get("/destinations", {
           origin_airport: input.originAirport,
           destination_airport: input.destinationAirport
-        })
+        }).then(result => pageResult(result, input.offset, input.limit))
       )
   );
 
@@ -187,7 +194,7 @@ export function createSeatsAeroMcpServer(config: AppConfig, client: SeatsAeroCli
     {
       title: "Refresh Cached Data",
       description:
-        "Queue refreshes for stale cached availability objects and return their asynchronous status. Pro API keys only; repeat the same call to poll until complete is true. Do not use IDs from Live Search.",
+        "Queue refreshes for stale cached availability objects and return their asynchronous status. Pro only. Maximum 10 IDs: each newly queued item can cost one daily quota credit. Repeating queued IDs only polls. Wait at least 10 seconds between polls, stop after 2 minutes, and wait 15 minutes after a failed refresh. Cached IDs only.",
       inputSchema: refreshCachedDataSchema,
       annotations: { readOnlyHint: false, idempotentHint: true }
     },
@@ -195,11 +202,11 @@ export function createSeatsAeroMcpServer(config: AppConfig, client: SeatsAeroCli
       if (config.plan !== "pro") {
         return unsupported("Refresh Cached Data is available only with a Seats.aero Pro API key.");
       }
-      return callTool(() => client.post("/refresh", { availability_ids: input.availabilityIds }));
+      return callTool(() => client.post("/refresh", { availability_ids: [...new Set(input.availabilityIds)] }));
     }
   );
 
-  server.registerTool(
+  if (config.plan === "commercial") server.registerTool(
     "seats_aero_live_search",
     {
       title: "Live Search",
@@ -232,7 +239,7 @@ export function createSeatsAeroMcpServer(config: AppConfig, client: SeatsAeroCli
 async function callTool(operation: () => Promise<unknown>) {
   try {
     return {
-      content: [{ type: "text" as const, text: JSON.stringify(await operation(), null, 2) }]
+      content: [{ type: "text" as const, text: encodeResult(await operation()) }]
     };
   } catch (error) {
     return {
@@ -254,4 +261,10 @@ function errorMessage(error: unknown): string {
     return error.message;
   }
   return "Seats.aero request failed with an unknown error";
+}
+
+function encodeResult(result: unknown): string {
+  const text = JSON.stringify(result);
+  if (Buffer.byteLength(text) > 64 * 1024) throw new Error("Result exceeds 64 KiB. Reduce take/limit, narrow the search, or use summary format. No results were silently truncated.");
+  return text;
 }

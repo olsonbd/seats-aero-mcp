@@ -25,13 +25,18 @@ export function startStdio(config: AppConfig): void {
   });
 }
 
-export async function startHttp(config: AppConfig): Promise<void> {
-  const handler = createMcpHandlerForConfig(config);
+export async function startHttp(config: AppConfig, client = createClient(config)) {
+  const handler = createMcpHandlerForConfig(config, client);
   const nodeHandler = toNodeHandler(handler);
   const validateHost = isLoopbackHttpHost(config.httpHost) ? localhostHostValidation() : undefined;
   const validateOrigin = isLoopbackHttpHost(config.httpHost) ? localhostOriginValidation() : undefined;
 
   const server = createNodeServer((request, response) => {
+    if (request.url === "/health" && (request.method === "GET" || request.method === "HEAD")) {
+      response.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
+      response.end(JSON.stringify({ status: "ok", version: "0.2.0" }));
+      return;
+    }
     if (request.url?.split("?", 1)[0] !== "/mcp") {
       response.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
       response.end("Not found");
@@ -44,6 +49,12 @@ export async function startHttp(config: AppConfig): Promise<void> {
     if (validateOrigin && !validateOrigin(request, response)) {
       return;
     }
+    if (request.headers.origin && !(config.allowedOrigins ?? []).includes(request.headers.origin)) {
+      response.writeHead(403);
+      response.end("Origin not allowed");
+      return;
+    }
+    response.setHeader("Cache-Control", "no-store");
     if (config.httpBearerToken && !hasBearerToken(request, config.httpBearerToken)) {
       response.writeHead(401, {
         "content-type": "text/plain; charset=utf-8",
@@ -68,10 +79,23 @@ export async function startHttp(config: AppConfig): Promise<void> {
 
   const close = async () => {
     await handler.close();
-    await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
+    await new Promise<void>((resolve, reject) => {
+      server.close((error) => (error ? reject(error) : resolve()));
+      server.closeAllConnections();
+    });
   };
-  process.once("SIGINT", () => void close());
-  process.once("SIGTERM", () => void close());
+  const shutdown = () => { void close(); };
+  process.once("SIGINT", shutdown);
+  process.once("SIGTERM", shutdown);
+  const address = server.address();
+  return {
+    port: typeof address === "object" && address ? address.port : config.httpPort,
+    close: async () => {
+      process.removeListener("SIGINT", shutdown);
+      process.removeListener("SIGTERM", shutdown);
+      await close();
+    }
+  };
 }
 
 function createClient(config: AppConfig): SeatsAeroClient {
