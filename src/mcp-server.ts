@@ -4,6 +4,7 @@ import * as z from "zod/v4";
 import type { AppConfig } from "./config.js";
 import { summarizeAvailability, pageResult } from "./results.js";
 import { SeatsAeroClient } from "./seats-aero-client.js";
+import { PACKAGE_VERSION } from "./version.js";
 
 const cabins = ["economy", "premium", "business", "first"] as const;
 const regions = ["North America", "South America", "Africa", "Asia", "Europe", "Oceania"] as const;
@@ -84,7 +85,7 @@ const liveSearchSchema = z.object({
 });
 
 export function createSeatsAeroMcpServer(config: AppConfig, client: SeatsAeroClient): McpServer {
-  const server = new McpServer({ name: "seats-aero", version: "0.2.0" });
+  const server = new McpServer({ name: "seats-aero", version: PACKAGE_VERSION });
 
   server.registerTool(
     "seats_aero_cached_search",

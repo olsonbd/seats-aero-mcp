@@ -1,7 +1,7 @@
 {
   "name": "@olsonbd/seats-aero-mcp",
   "version": "0.2.0",
-  "description": "MCP v2 server for the Seats.aero partner API",
+  "description": "Personal-use MCP server for the Seats.aero Partner API",
   "keywords": [
     "mcp",
     "model-context-protocol",
@@ -28,6 +28,10 @@
     "README.md",
     "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "engines": {
     "node": ">=20"
   },
@@ -36,7 +40,10 @@
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
     "start:http": "node dist/index.js --http",
-    "test": "tsx --test test/*.test.ts"
+    "test": "tsx --test test/*.test.ts",
+    "test:package": "npm run build && node scripts/package-smoke.mjs",
+    "prepack": "npm run build",
+    "prepublishOnly": "npm test"
   },
   "dependencies": {
     "@modelcontextprotocol/node": "^2.0.0",
@@ -48,6 +55,5 @@
     "@types/node": "^24.0.0",
     "tsx": "^4.23.12",
     "typescript": "^7.0.2"
-  },
-  "private": true
+  }
 }

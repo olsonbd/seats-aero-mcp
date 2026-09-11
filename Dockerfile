@@ -8,7 +8,6 @@ COPY test ./test
 RUN npm run build && npm test && npm prune --omit=dev --ignore-scripts
 
 FROM node:24.18.0-bookworm-slim AS runtime
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production MCP_TRANSPORT=http MCP_HTTP_HOST=0.0.0.0 MCP_HTTP_PORT=3000 SEATS_AERO_PLAN=pro
 WORKDIR /app
 COPY --from=build --chown=node:node /app/node_modules ./node_modules

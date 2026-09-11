@@ -1,9 +1,14 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 import { SeatsAeroClient, SeatsAeroApiError } from "../src/seats-aero-client.js";
 import { loadConfig } from "../src/config.js";
 import { startHttp } from "../src/transports.js";
+
+const packageVersion = JSON.parse(
+  readFileSync(new URL("../package.json", import.meta.url), "utf8")
+).version as string;
 
 const cfg = loadConfig({ SEATS_AERO_API_KEY: "test-secret", SEATS_AERO_PLAN: "pro", MCP_HTTP_BEARER_TOKEN: "transport-secret" });
 
@@ -78,7 +83,9 @@ test("real HTTP protects auth/origins and serves bounded Pro searches, paginatio
   const client = new Client({ name: "integration", version: "1" });
   const transport = new StreamableHTTPClientTransport(new URL(`${url}/mcp`), { requestInit: { headers: { Authorization: "Bearer transport-secret" } } });
   try {
-    assert.equal((await fetch(`${url}/health`)).status, 200);
+    const health = await fetch(`${url}/health`);
+    assert.equal(health.status, 200);
+    assert.deepEqual(await health.json(), { status: "ok", version: packageVersion });
     assert.equal((await fetch(`${url}/mcp`, { method: "POST" })).status, 401);
     assert.equal((await fetch(`${url}/mcp`, { method: "POST", headers: { Authorization: "Bearer wrong" } })).status, 401);
     assert.equal((await fetch(`${url}/mcp`, { method: "POST", headers: { Authorization: "Bearer transport-secret", Origin: "https://evil.example" } })).status, 403);

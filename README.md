@@ -1,6 +1,8 @@
 # Seats.aero Pro MCP
 
-Personal-use award-search MCP server, maintained from [kwonye/seats-aero-mcp](https://github.com/kwonye/seats-aero-mcp) at commit `9905c2b28f6c9de95c1aae87348552f41a511a8a`. The original MIT license is preserved. Install from source or build the container image; this project is not published to npm.
+Personal-use award-search MCP server, maintained from [kwonye/seats-aero-mcp](https://github.com/kwonye/seats-aero-mcp) at commit `9905c2b28f6c9de95c1aae87348552f41a511a8a`. The original MIT license and attribution are preserved.
+
+This is an unofficial community project and is not affiliated with or endorsed by Seats.aero. Every user must provide their own eligible Seats.aero API credential. Seats.aero permits Pro API use for non-commercial purposes; commercial use requires a written agreement. Your use of the API remains subject to the [Seats.aero terms and API requirements](https://developers.seats.aero/reference/getting-started-p).
 
 ## Behavior
 
@@ -15,7 +17,31 @@ Personal-use award-search MCP server, maintained from [kwonye/seats-aero-mcp](ht
 
 Cached availability is not a booking guarantee. Check `UpdatedAt`, inspect itineraries, and verify with the booking airline before transferring points. Missing seat counts are unknown. Times and taxes retain upstream representation; do not assume UTC or decimal currency units.
 
-## Run and test
+## Install
+
+The default transport is STDIO. Load your Seats.aero API key into the environment from a secret manager or other protected local store. After the first npm release, run the published package:
+
+```sh
+export SEATS_AERO_API_KEY="your-key"
+npx -y @olsonbd/seats-aero-mcp@0.2.0
+```
+
+Do not put the key directly in shell commands, committed configuration, logs, or issue reports.
+
+### Codex
+
+Add this user-level configuration to `~/.codex/config.toml` so it is available across trusted projects:
+
+```toml
+[mcp_servers.seats_aero]
+command = "npx"
+args = ["-y", "@olsonbd/seats-aero-mcp@0.2.0"]
+env_vars = ["SEATS_AERO_API_KEY", "SEATS_AERO_PLAN"]
+```
+
+Set `SEATS_AERO_API_KEY` before starting Codex. `SEATS_AERO_PLAN` defaults to `pro`; set it to `commercial` only if you have a written commercial API agreement. Codex forwards the named variables from its environment to the STDIO server. See the [Codex MCP documentation](https://developers.openai.com/codex/mcp).
+
+## Develop and test
 
 The Dockerfile pins Node.js 24.18.0. For local development, use the same version; the package declares Node.js 20+ compatibility.
 
@@ -23,6 +49,7 @@ The Dockerfile pins Node.js 24.18.0. For local development, use the same version
 npm ci --ignore-scripts
 npm run build
 npm test
+npm run test:package
 cp .env.example .env
 # Enter secrets locally; .env is ignored by git and Docker.
 node --env-file=.env dist/index.js --http
@@ -30,7 +57,7 @@ node --env-file=.env dist/index.js --http
 
 `/mcp` is authenticated Streamable HTTP. `/health` is a liveness check that makes no Seats.aero API call. Startup requires `SEATS_AERO_API_KEY`; health does not verify its eligibility or validity. Omit `--http` and set `MCP_TRANSPORT=stdio` for STDIO.
 
-The server makes no LLM calls and needs no model API key. It requires eligible Seats.aero Pro API access and an environment that can run Node.js or Docker and reach the Seats.aero API.
+The server makes no LLM calls and needs no model API key. It requires eligible Seats.aero API access and an environment that can run Node.js or Docker and reach the Seats.aero API.
 
 ## Deployment
 

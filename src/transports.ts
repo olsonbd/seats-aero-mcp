@@ -9,6 +9,7 @@ import type { AppConfig } from "./config.js";
 import { isLoopbackHttpHost } from "./config.js";
 import { createSeatsAeroMcpServer } from "./mcp-server.js";
 import { SeatsAeroClient } from "./seats-aero-client.js";
+import { PACKAGE_VERSION } from "./version.js";
 
 export function createMcpHandlerForConfig(config: AppConfig, client = createClient(config)) {
   return createMcpHandler(() => createSeatsAeroMcpServer(config, client));
@@ -34,7 +35,7 @@ export async function startHttp(config: AppConfig, client = createClient(config)
   const server = createNodeServer((request, response) => {
     if (request.url === "/health" && (request.method === "GET" || request.method === "HEAD")) {
       response.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
-      response.end(JSON.stringify({ status: "ok", version: "0.2.0" }));
+      response.end(JSON.stringify({ status: "ok", version: PACKAGE_VERSION }));
       return;
     }
     if (request.url?.split("?", 1)[0] !== "/mcp") {

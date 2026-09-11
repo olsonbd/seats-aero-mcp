@@ -1,0 +1,49 @@
+name: Bug report
+description: Report a reproducible problem without sharing credentials or private travel data
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for reporting a problem. Redact API keys, bearer tokens, private endpoints, and complete upstream responses.
+  - type: input
+    id: version
+    attributes:
+      label: Package or commit version
+      placeholder: 0.2.0 or a commit SHA
+    validations:
+      required: true
+  - type: input
+    id: runtime
+    attributes:
+      label: Runtime
+      description: Include the Node.js version, operating system, and STDIO or HTTP transport.
+      placeholder: Node.js 24 on Linux, STDIO
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Give the smallest sequence that reproduces the problem using placeholder airports or IDs where possible.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior and sanitized output
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Sensitive-data check
+      options:
+        - label: I removed API keys, bearer tokens, private endpoints, and personal travel details.
+          required: true
