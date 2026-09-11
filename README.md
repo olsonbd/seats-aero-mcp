@@ -23,7 +23,7 @@ The default transport is STDIO. Load your Seats.aero API key into the environmen
 
 ```sh
 export SEATS_AERO_API_KEY="your-key"
-npx -y @olsonbd/seats-aero-mcp@0.2.0
+npx -y @olsonbd/seats-aero-mcp@0.2.1
 ```
 
 Do not put the key directly in shell commands, committed configuration, logs, or issue reports.
@@ -35,7 +35,7 @@ Add this user-level configuration to `~/.codex/config.toml` so it is available a
 ```toml
 [mcp_servers.seats_aero]
 command = "npx"
-args = ["-y", "@olsonbd/seats-aero-mcp@0.2.0"]
+args = ["-y", "@olsonbd/seats-aero-mcp@0.2.1"]
 env_vars = ["SEATS_AERO_API_KEY", "SEATS_AERO_PLAN"]
 ```
 
