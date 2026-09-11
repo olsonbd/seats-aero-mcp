@@ -23,7 +23,7 @@ Cached refresh changes upstream state and can consume additional quota. Exercise
 
 The container runs as an unprivileged user. Its entrypoint sets `--no-new-privs` in the server process. Use a read-only filesystem and drop container capabilities as shown in the README. Set memory and CPU limits appropriate to your environment and workload.
 
-The Docker image includes a Node.js-based health check. If using a platform-managed probe, point it at `/health` on the configured internal HTTP port.
+The Docker image includes a Node.js-based health check and `curl` for container platforms that execute their own HTTP probe inside the container. If using a platform-managed probe, point it at `/health` on the configured internal HTTP port.
 
 To roll back, redeploy the preceding tested image or source revision with the required runtime configuration. Recheck liveness and authenticated tool discovery. Do not patch running containers or download unpinned packages at startup.
 
