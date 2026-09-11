@@ -9,8 +9,9 @@ The first publication requires an npm account that owns the `@olsonbd` scope and
 1. Make the GitHub repository public so npm can attach provenance to releases.
 2. Confirm that `package.json` and the root package entries in `package-lock.json` contain the intended version.
 3. From a clean checkout, run `npm ci --ignore-scripts`, `npm test`, `npm run test:package`, and `npm audit --omit=dev --audit-level=moderate`.
-4. Authenticate locally with npm and run `npm publish`. The committed `publishConfig` makes the scoped package public.
-5. Configure the trusted publisher:
+4. Create and push a `v<version>` tag for that exact commit, but do not create the GitHub release yet.
+5. Check out the tag, authenticate locally with npm, and run `npm publish`. The committed `publishConfig` makes the scoped package public.
+6. Configure the trusted publisher:
 
    ```sh
    npm trust github @olsonbd/seats-aero-mcp \
@@ -19,7 +20,10 @@ The first publication requires an npm account that owns the `@olsonbd` scope and
      --allow-publish
    ```
 
-6. In the npm package settings, require two-factor authentication and disallow token-based publishing after the trusted workflow succeeds.
+7. Create the GitHub release from the existing tag. The workflow verifies that the already-published bootstrap package came from the same Git commit and completes without publishing it twice.
+8. In the npm package settings, require two-factor authentication and disallow token-based publishing after the trusted workflow succeeds.
+
+The bootstrap version is published from the maintainer's authenticated workstation. Releases after trusted publishing is configured are published by GitHub Actions with npm provenance.
 
 ## Subsequent releases
 
