@@ -30,3 +30,9 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run test:package
       - run: npm audit --omit=dev --audit-level=moderate
+
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build --tag seats-aero-mcp:ci .
