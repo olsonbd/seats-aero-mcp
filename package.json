@@ -1,6 +1,6 @@
 {
   "name": "@olsonbd/seats-aero-mcp",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Personal-use MCP server for the Seats.aero Partner API",
   "keywords": [
     "mcp",
