@@ -1,4 +1,4 @@
-FROM node:24.18.0-bookworm-slim AS build
+FROM node:26.8-bookworm-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
@@ -7,7 +7,7 @@ COPY src ./src
 COPY test ./test
 RUN npm run build && npm test && npm prune --omit=dev --ignore-scripts
 
-FROM node:24.18.0-bookworm-slim AS runtime
+FROM node:26.8-bookworm-slim AS runtime
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
