@@ -68,7 +68,7 @@ try {
   child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/list", params: {} })}\n`);
   await waitFor(() => messages.some((message) => message.id === 2));
   const tools = messages.find((message) => message.id === 2).result.tools;
-  assert.equal(tools.length, 6);
+  assert.equal(tools.length, 7);
   assert.ok(tools.some((tool) => tool.name === "seats_aero_cached_search"));
   console.log(`Verified packed ${manifest.name}@${manifest.version} with ${tools.length} Pro tools`);
 } finally {

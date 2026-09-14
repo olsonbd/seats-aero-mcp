@@ -160,6 +160,21 @@ test("refresh status can be polled by repeating the same call without internal r
   assert.equal(mocked.calls.length, 2);
 });
 
+test("active alerts are Pro-only and use the alerts endpoint", async () => {
+  const mocked = mockFetch({ body: { data: [{ ID: "alert-1", Type: "award", Paused: true }] } });
+  const pro = await callTool(config("pro"), mocked.fetchImplementation, "seats_aero_list_active_alerts", {});
+
+  assert.equal(pro.isError, undefined);
+  assert.deepEqual(JSON.parse(textResult(pro)).data.data, [{ ID: "alert-1", Type: "award", Paused: true }]);
+  assert.equal(mocked.calls[0]?.url, "https://seats.aero/partnerapi/alerts");
+
+  const commercialMock = mockFetch({ body: { shouldNot: "be called" } });
+  const commercial = await callTool(config("commercial"), commercialMock.fetchImplementation, "seats_aero_list_active_alerts", {});
+  assert.equal(commercial.isError, true);
+  assert.match(textResult(commercial), /Pro API key/i);
+  assert.equal(commercialMock.calls.length, 0);
+});
+
 test("Live Search is commercial-only", async () => {
   const commercialMock = mockFetch({ body: [{ id: "live-trip" }] });
   const commercial = await callTool(config("commercial"), commercialMock.fetchImplementation, "seats_aero_live_search", {
@@ -273,10 +288,11 @@ test("stdio transport initializes and lists the Seats.aero tools", async () => {
   child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/list", params: {} })}\n`);
   await waitFor(() => messages.some((message) => message.id === 2));
   const tools = ((messages.find((message) => message.id === 2)?.result as Record<string, unknown>)?.tools ?? []) as Array<{ name: string }>;
-  assert.equal(tools.length, 6);
+  assert.equal(tools.length, 7);
   assert.ok(!tools.some((tool) => tool.name === "seats_aero_live_search"));
   assert.ok(tools.some((tool) => tool.name === "seats_aero_get_destinations"));
   assert.ok(tools.some((tool) => tool.name === "seats_aero_refresh_cached_data"));
+  assert.ok(tools.some((tool) => tool.name === "seats_aero_list_active_alerts"));
 
   child.kill("SIGTERM");
   await Promise.race([once(child, "exit"), new Promise((resolve) => setTimeout(resolve, 2_000))]);
