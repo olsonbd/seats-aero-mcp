@@ -6,7 +6,7 @@ This is an unofficial community project and is not affiliated with or endorsed b
 
 ## Behavior
 
-- Pro mode exposes cached search, bulk availability, trips, routes, destinations and explicit cached refresh. Commercial live search is absent from Pro discovery.
+- Pro mode exposes cached search, bulk availability, trips, routes, destinations, active alerts and explicit cached refresh. Commercial live search is absent from Pro discovery.
 - Search defaults to 25 summaries, maximum 100 results. Cursor and `hasMore` are preserved; no automatic pagination. `format=full` retains upstream search fields.
 - Trips/routes/destinations expose local `offset`/`limit` pages (25 default, 50 maximum). Each page makes a new upstream request and can change as inventory changes.
 - Responses include `meta.fetchedAt`, `quotaRemaining` (null when unknown), UTC quota reset time, and request attempts. The outer `data` contains the upstream result or documented projection.
@@ -85,3 +85,4 @@ Deploy tested source revisions or versioned images, and retain the preceding tes
 - [Seats.aero API access](https://developers.seats.aero/reference/getting-started-p)
 - [Cached search](https://developers.seats.aero/reference/cached-search)
 - [Refresh charging and polling](https://developers.seats.aero/reference/refresh-cached-data)
+- [List active alerts](https://developers.seats.aero/reference/list-active-alerts)

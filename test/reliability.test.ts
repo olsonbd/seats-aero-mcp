@@ -92,7 +92,7 @@ test("real HTTP protects auth/origins and serves bounded Pro searches, paginatio
     assert.equal(calls.length, 0);
     await client.connect(transport);
     const listed = await client.listTools();
-    assert.equal(listed.tools.length, 6);
+    assert.equal(listed.tools.length, 7);
     assert.ok(!listed.tools.some(t => t.name.includes("live_search")));
     const call = async (name: string, args: Record<string, unknown>) => {
       const result = await client.callTool({ name: `seats_aero_${name}`, arguments: args });

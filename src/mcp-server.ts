@@ -191,6 +191,23 @@ export function createSeatsAeroMcpServer(config: AppConfig, client: SeatsAeroCli
   );
 
   server.registerTool(
+    "seats_aero_list_active_alerts",
+    {
+      title: "List Active Alerts",
+      description:
+        "List the authenticated user's non-expired Seats.aero alerts, including paused alerts. Pro users only; commercial partner keys do not identify a user. Results are returned newest first by the upstream API.",
+      inputSchema: z.object({}),
+      annotations: { readOnlyHint: true, idempotentHint: true }
+    },
+    async () => {
+      if (config.plan !== "pro") {
+        return unsupported("List Active Alerts is available only with a Seats.aero Pro API key.");
+      }
+      return callTool(() => client.get("/alerts", {}));
+    }
+  );
+
+  server.registerTool(
     "seats_aero_refresh_cached_data",
     {
       title: "Refresh Cached Data",
