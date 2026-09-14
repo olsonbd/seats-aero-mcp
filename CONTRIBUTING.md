@@ -4,7 +4,7 @@ Contributions that keep this server small, bounded, secure, and compatible with 
 
 ## Development
 
-Use Node.js 20 or newer. Node.js 24 is the pinned container and primary development version.
+Use Node.js 20 or newer. The container uses Node.js 26.8; Node.js 24 remains the primary development version and typings baseline. CI covers Node.js 20, 22, 24, and 26.
 
 ```sh
 npm ci --ignore-scripts
