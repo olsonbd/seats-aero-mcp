@@ -13,7 +13,7 @@ See the [README](../README.md#deployment) for Node.js and Docker setup, runtime 
 
 1. Check that the process starts successfully and `GET /health` returns HTTP 200. This is a liveness check; it makes no Seats.aero API call and does not validate the API key.
 2. Verify that the server's `/mcp` endpoint rejects missing and incorrect bearer tokens when bearer authentication is configured. The public proxy or gateway may enforce additional authentication independently.
-3. Connect an authenticated Streamable HTTP MCP client through the intended client endpoint. Initialize a session and list tools. Pro mode should expose six tools and no commercial live-search tool.
+3. Connect an authenticated Streamable HTTP MCP client through the intended client endpoint. Initialize a session and list tools. Pro mode should expose seven tools and no commercial live-search tool.
 4. Run a small cached search with a bounded result count. Check freshness, quota metadata, and pagination. If results exist, inspect one availability ID with the trips tool. These checks consume API quota; cached results are not a booking guarantee.
 5. Restart the service and repeat initialization and tool discovery with a fresh client to verify recovery and runtime configuration persistence.
 
