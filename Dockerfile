@@ -1,4 +1,4 @@
-FROM node:26.8-bookworm-slim AS build
+FROM node:26.12.1-bookworm-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
@@ -7,9 +7,11 @@ COPY src ./src
 COPY test ./test
 RUN npm run build && npm test && npm prune --omit=dev --ignore-scripts
 
-FROM node:26.8-bookworm-slim AS runtime
+FROM node:26.12.1-bookworm-slim AS runtime
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
+    && rm -rf /usr/local/lib/node_modules/npm /opt/yarn* \
+    && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/yarn /usr/local/bin/yarnpkg \
     && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production MCP_TRANSPORT=http MCP_HTTP_HOST=0.0.0.0 MCP_HTTP_PORT=3000 SEATS_AERO_PLAN=pro
 WORKDIR /app
